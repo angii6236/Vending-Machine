@@ -124,6 +124,15 @@
     border: 1px solid #999;
   }
 
+  /* stock label */
+  .item .stock {
+    font-size: 12px;
+    margin-top: 6px;
+    color: rgba(0,0,0,0.7);
+  }
+  body.cyberpunk .item .stock { color: #66ffd8; opacity:0.9; }
+  .item.soldout .stock { color: #ff6b6b; font-weight: bold; }
+
   /* COINS */
   .coin-area {
     display: flex;
@@ -241,12 +250,12 @@
   <div class="screen" id="screen">Balance: NT$0<br>Select an item</div>
 
   <div class="items" id="items">
-    <div class="item" data-name="Coca Cola" data-price="20" data-stock="5"><span>🥤</span>Coca Cola<br><b>NT$20</b></div>
-    <div class="item" data-name="Water" data-price="10" data-stock="5"><span>💧</span>Water<br><b>NT$10</b></div>
-    <div class="item" data-name="Coffee" data-price="25" data-stock="5"><span>☕</span>Coffee<br><b>NT$25</b></div>
-    <div class="item" data-name="Pie Marshmallow" data-price="15" data-stock="5"><span>🎂</span>Pie Marshmallow<br><b>NT$15</b></div>
-    <div class="item" data-name="Cake Roll" data-price="15" data-stock="5"><span>🥖</span>Cake Roll<br><b>NT$15</b></div>
-    <div class="item" data-name="Mini Donut" data-price="15" data-stock="5"><span>🍩</span>Mini Donut<br><b>NT$15</b></div>
+    <div class="item" data-name="Coca Cola" data-price="20" data-stock="8"><span>🥤</span>Coca Cola<br><b>NT$20</b><div class="stock">Stock: 5</div></div>
+    <div class="item" data-name="Water" data-price="10" data-stock="9"><span>💧</span>Water<br><b>NT$10</b><div class="stock">Stock: 5</div></div>
+    <div class="item" data-name="Coffee" data-price="25" data-stock="7"><span>☕</span>Coffee<br><b>NT$25</b><div class="stock">Stock: 5</div></div>
+    <div class="item" data-name="Pie Marshmallow" data-price="15" data-stock="4"><span>🎂</span>Pie Marshmallow<br><b>NT$15</b><div class="stock">Stock: 5</div></div>
+    <div class="item" data-name="Cake Roll" data-price="15" data-stock="6"><span>🥖</span>Cake Roll<br><b>NT$15</b><div class="stock">Stock: 5</div></div>
+    <div class="item" data-name="Mini Donut" data-price="15" data-stock="5"><span>🍩</span>Mini Donut<br><b>NT$15</b><div class="stock">Stock: 5</div></div>
   </div>
 
   <div class="coin-slot" id="coinSlot">💰 Insert</div>
@@ -295,6 +304,23 @@ function updateScreen() {
 
 function setTheme(theme){ document.body.className = theme; }
 
+/* helper to show stock text based on data-stock attribute */
+function renderStocks(){
+  items.forEach(item => {
+    const stock = parseInt(item.getAttribute('data-stock')) || 0;
+    const stockEl = item.querySelector('.stock');
+    if(stockEl){
+      if(stock <= 0){
+        stockEl.textContent = 'Sold Out';
+        item.classList.add('soldout');
+      } else {
+        stockEl.textContent = `Stock: ${stock}`;
+        item.classList.remove('soldout');
+      }
+    }
+  });
+}
+
 /* Drag & Drop Coins */
 document.querySelectorAll('.coin').forEach(coin => {
   coin.addEventListener('dragstart', e => { e.dataTransfer.setData('value', coin.getAttribute('data-value')); });
@@ -323,7 +349,16 @@ items.forEach(item => {
       balance -= price;
       stock -= 1;
       item.setAttribute('data-stock', stock);
-      if(stock <= 0) item.classList.add('soldout');
+      // update visible stock label and soldout state
+      const stockEl = item.querySelector('.stock');
+      if(stockEl){
+        if(stock <= 0){
+          stockEl.textContent = 'Sold Out';
+          item.classList.add('soldout');
+        } else {
+          stockEl.textContent = `Stock: ${stock}`;
+        }
+      }
 
       dropBox.innerHTML = `<div class="dropped-item">${item.querySelector('span').outerHTML}</div>`;
       document.getElementById('output').textContent = `You bought ${name}! Remaining stock: ${stock} | Balance: NT$${balance}`;
@@ -334,7 +369,6 @@ items.forEach(item => {
     }
   });
 });
-
 /* Finish Purchase + Reset */
 document.getElementById("doneButton").addEventListener("click", function() {
   if(balance > 0){
@@ -370,6 +404,10 @@ document.getElementById("doneButton").addEventListener("click", function() {
     document.getElementById('output').textContent = "No change to return.";
   }
 });
+
+/* initial render of stock labels */
+renderStocks();
+updateScreen();
 </script>
 
 </body>
