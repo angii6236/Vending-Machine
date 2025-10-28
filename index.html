@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vending Machine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+  body {
+    font-family: 'Orbitron', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    transition: all 0.3s;
+  }
+
+  /* THEMES */
+  body.cyberpunk {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #00ffea;
+  }
+  body.blue {
+    background: linear-gradient(to bottom, #cce7ff, #ffffff);
+    color: #004080;
+  }
+  body.minimal {
+    background: #fff;
+    color: #000;
+  }
+
+  .vending-machine {
+    border-radius: 20px;
+    padding: 25px;
+    width: 400px;
+    position: relative;
+    transition: all 0.3s;
+  }
+
+  body.cyberpunk .vending-machine {
+    background: #111;
+    box-shadow: 0 0 20px #00ffea, 0 0 40px #00ffea inset;
+    border: 2px solid #00ffea;
+  }
+  body.blue .vending-machine {
+    background: #e0f0ff;
+    border: 2px solid #3399ff;
+    box-shadow: 2px 2px 10px #99ccff;
+  }
+  body.minimal .vending-machine {
+    background: #eee;
+    border: 1px solid #999;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 15px;
+  }
+
+  .screen {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    min-height: 50px;
+  }
+  body.cyberpunk .screen {
+    background: #000;
+    color: #0f0;
+    border: 2px solid #00ffea;
+    box-shadow: 0 0 10px #00ffea inset;
+  }
+  body.blue .screen {
+    background: #ffffff;
+    color: #004080;
+    border: 2px solid #3399ff;
+    box-shadow: inset 0 0 5px #99ccff;
+  }
+  body.minimal .screen {
+    background: #ddd;
+    color: #000;
+    border: 1px solid #999;
+  }
+
+  .items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .item {
+    border-radius: 12px;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+  }
+  .item span {
+    font-size: 40px;
+    margin-bottom: 5px;
+    display: block;
+    transition: transform 0.2s;
+  }
+  .item:hover span { transform: scale(1.3); }
+  .item.soldout { opacity: 0.4; cursor: not-allowed; }
+
+  body.cyberpunk .item {
+    background: #222;
+    color: #00ffea;
+    border: 1px solid #00ffea;
+  }
+  body.blue .item {
+    background: #cce7ff;
+    color: #004080;
+    border: 1px solid #3399ff;
+  }
+  body.minimal .item {
+    background: #eee;
+    color: #000;
+    border: 1px solid #999;
+  }
+
+  /* COINS */
+  .coin-area {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 15px 0;
+  }
+  .coin {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: gold;
+    border: 2px solid #b8860b;
+    color: black;
+    font-weight: bold;
+    line-height: 50px;
+    text-align: center;
+    cursor: grab;
+  }
+
+  .coin-slot {
+    width: 80px;
+    height: 20px;
+    background: #333;
+    border: 2px solid #00ffea;
+    border-radius: 10px;
+    margin: 10px auto;
+    position: relative;
+    text-align: center;
+    color: #00ffea;
+    font-size: 14px;
+    padding-top: 2px;
+  }
+  .coin-slot.dragover { background: #00ffea; color: #000; }
+
+  /* DROP BOX AND CHANGE BOX */
+  .bottom-boxes {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .drop-box, .change-box {
+    flex: 1;
+    height: 70px;
+    border: 2px solid #00ffea;
+    border-radius: 10px;
+    background: #000;
+    text-align: center;
+    color: #00ffea;
+    padding-top: 10px;
+    overflow: hidden;
+    position: relative;
+    font-size: 14px;
+  }
+
+  body.blue .drop-box,
+  body.blue .change-box {
+    background: #ffffff;
+    color: #004080;
+    border: 2px solid #3399ff;
+  }
+
+  .dropped-item { font-size: 35px; animation: appear 1s ease forwards; }
+  @keyframes appear { from { transform: translateY(-20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+  @keyframes coinFallBounce {
+    0% { transform: translateY(-120px) rotate(0deg); opacity:1; }
+    70% { transform: translateY(50px) rotate(360deg); }
+    85% { transform: translateY(40px) rotate(380deg); }
+    100% { transform: translateY(45px) rotate(400deg); opacity:1; }
+  }
+  .falling-coin { position: absolute; top:0; font-size:20px; animation: coinFallBounce 1s ease forwards; }
+
+  button {
+    background-color: #00ffea;
+    border: none;
+    color: #000;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    flex: 1;
+    margin: 0 3px;
+    transition: 0.2s;
+  }
+  button:hover { background-color: #00bcd4; color: white; }
+
+  .finish-btn {
+    display: block;
+    margin: 5px auto 15px;
+    padding: 6px 10px;
+    font-size: 13px;
+    width: 120px;
+  }
+
+  .themes { display: flex; justify-content: space-between; margin-top: 10px; }
+
+  .output {
+    text-align: center;
+    min-height: 20px;
+    font-size: 16px;
+    margin-top: 10px;
+  }
+
+  @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+
+</style>
+</head>
+<body class="cyberpunk">
+
+<div class="vending-machine">
+  <h2>Vending Machine</h2>
+  <div class="screen" id="screen">Balance: NT$0<br>Select an item</div>
+
+  <div class="items" id="items">
+    <div class="item" data-name="Coca Cola" data-price="20" data-stock="5"><span>🥤</span>Coca Cola<br><b>NT$20</b></div>
+    <div class="item" data-name="Water" data-price="10" data-stock="5"><span>💧</span>Water<br><b>NT$10</b></div>
+    <div class="item" data-name="Coffee" data-price="25" data-stock="5"><span>☕</span>Coffee<br><b>NT$25</b></div>
+    <div class="item" data-name="Pie Marshmallow" data-price="15" data-stock="5"><span>🎂</span>Pie Marshmallow<br><b>NT$15</b></div>
+    <div class="item" data-name="Cake Roll" data-price="15" data-stock="5"><span>🥖</span>Cake Roll<br><b>NT$15</b></div>
+    <div class="item" data-name="Mini Donut" data-price="15" data-stock="5"><span>🍩</span>Mini Donut<br><b>NT$15</b></div>
+  </div>
+
+  <div class="coin-slot" id="coinSlot">💰 Insert</div>
+
+  <div class="coin-area">
+    <div class="coin" draggable="true" data-value="1">1</div>
+    <div class="coin" draggable="true" data-value="5">5</div>
+    <div class="coin" draggable="true" data-value="10">10</div>
+    <div class="coin" draggable="true" data-value="50">50</div>
+  </div>
+
+  <button id="doneButton" class="finish-btn">Finish Purchase</button>
+
+  <div class="bottom-boxes">
+    <div class="drop-box" id="dropBox">⬇️ Product Here</div>
+    <div class="change-box" id="changeBox">💰 Change</div>
+  </div>
+
+  <div class="themes">
+    <button onclick="setTheme('cyberpunk')">Cyberpunk</button>
+    <button onclick="setTheme('blue')">Blue</button>
+    <button onclick="setTheme('minimal')">Minimal</button>
+  </div>
+
+  <div class="output" id="output"></div>
+</div>
+
+<script>
+let balance = 0;
+let selectedItem = null;
+let selectedPrice = 0;
+
+const items = document.querySelectorAll('.item');
+const coinSlot = document.getElementById('coinSlot');
+const dropBox = document.getElementById('dropBox');
+const changeBox = document.getElementById('changeBox');
+
+function updateScreen() {
+  const screen = document.getElementById('screen');
+  if(selectedItem){
+    screen.innerHTML = `Selected: ${selectedItem} (NT$${selectedPrice})<br>Balance: NT$${balance}`;
+  } else {
+    screen.innerHTML = `Balance: NT$${balance}<br>Select an item`;
+  }
+}
+
+function setTheme(theme){ document.body.className = theme; }
+
+/* Drag & Drop Coins */
+document.querySelectorAll('.coin').forEach(coin => {
+  coin.addEventListener('dragstart', e => { e.dataTransfer.setData('value', coin.getAttribute('data-value')); });
+});
+coinSlot.addEventListener('dragover', e => { e.preventDefault(); coinSlot.classList.add('dragover'); });
+coinSlot.addEventListener('dragleave', e => { coinSlot.classList.remove('dragover'); });
+coinSlot.addEventListener('drop', e => {
+  e.preventDefault(); coinSlot.classList.remove('dragover');
+  const value = parseInt(e.dataTransfer.getData('value'));
+  balance += value;
+  document.getElementById('output').textContent = `Inserted NT$${value}. Total: NT$${balance}`;
+  updateScreen();
+});
+
+/* Item purchase */
+items.forEach(item => {
+  item.addEventListener('click', () => {
+    if(item.classList.contains('soldout')) return;
+    const name = item.getAttribute('data-name');
+    const price = parseInt(item.getAttribute('data-price'));
+    let stock = parseInt(item.getAttribute('data-stock'));
+
+    selectedItem = name; selectedPrice = price; updateScreen();
+
+    if(balance >= price){
+      balance -= price;
+      stock -= 1;
+      item.setAttribute('data-stock', stock);
+      if(stock <= 0) item.classList.add('soldout');
+
+      dropBox.innerHTML = `<div class="dropped-item">${item.querySelector('span').outerHTML}</div>`;
+      document.getElementById('output').textContent = `You bought ${name}! Remaining stock: ${stock} | Balance: NT$${balance}`;
+      selectedItem = null; selectedPrice = 0;
+      updateScreen();
+    } else {
+      document.getElementById('output').textContent = `Not enough money for ${name}. Price: NT$${price}`;
+    }
+  });
+});
+
+/* Finish Purchase + Reset */
+document.getElementById("doneButton").addEventListener("click", function() {
+  if(balance > 0){
+    const changeAmount = balance;
+    document.getElementById('output').textContent = `Transaction complete. Returning NT$${balance}`;
+
+    // coins fall animation
+    for(let i=0; i<Math.min(balance,10); i++){
+      const coin = document.createElement("div");
+      coin.classList.add("falling-coin");
+      coin.textContent = "🪙";
+      coin.style.left = `${30 + Math.random()*40}%`;
+      coin.style.animationDelay = `${i*0.15}s`;
+      changeBox.appendChild(coin);
+    }
+
+    changeBox.innerHTML += `<p style="font-size:12px;margin-top:5px;">Returned NT$${changeAmount}</p>`;
+    balance = 0;
+    updateScreen();
+
+    // Reset boxes after 2.5s
+    setTimeout(() => {
+      dropBox.style.animation = "fadeOut 1s forwards";
+      changeBox.style.animation = "fadeOut 1s forwards";
+      setTimeout(() => {
+        dropBox.innerHTML = "⬇️ Product Here";
+        changeBox.innerHTML = "💰 Change";
+        dropBox.style.animation = ""; changeBox.style.animation = "";
+      }, 1000);
+    }, 2500);
+
+  } else {
+    document.getElementById('output').textContent = "No change to return.";
+  }
+});
+</script>
+
+</body>
+</html>
