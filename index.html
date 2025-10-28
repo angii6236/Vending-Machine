@@ -106,7 +106,7 @@
     transition: transform 0.2s;
   }
   .item:hover span { transform: scale(1.3); }
-  .item.soldout { opacity: 0.4; cursor: not-allowed; }
+  .item.soldout { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
   body.cyberpunk .item {
     background: #222;
@@ -239,6 +239,17 @@
     margin-top: 10px;
   }
 
+  /* small signature at the bottom of the vending machine */
+  .signature {
+    font-size: 13px; /* small but readable */
+    text-align: center;
+    margin-top: 8px;
+    opacity: 0.9;
+    color: inherit; /* follow theme color */
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
   @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
 
 </style>
@@ -250,12 +261,12 @@
   <div class="screen" id="screen">Balance: NT$0<br>Select an item</div>
 
   <div class="items" id="items">
-    <div class="item" data-name="Coca Cola" data-price="20" data-stock="8"><span>🥤</span>Coca Cola<br><b>NT$20</b><div class="stock">Stock: 5</div></div>
-    <div class="item" data-name="Water" data-price="10" data-stock="9"><span>💧</span>Water<br><b>NT$10</b><div class="stock">Stock: 5</div></div>
-    <div class="item" data-name="Coffee" data-price="25" data-stock="7"><span>☕</span>Coffee<br><b>NT$25</b><div class="stock">Stock: 5</div></div>
-    <div class="item" data-name="Pie Marshmallow" data-price="15" data-stock="4"><span>🎂</span>Pie Marshmallow<br><b>NT$15</b><div class="stock">Stock: 5</div></div>
-    <div class="item" data-name="Cake Roll" data-price="15" data-stock="6"><span>🥖</span>Cake Roll<br><b>NT$15</b><div class="stock">Stock: 5</div></div>
-    <div class="item" data-name="Mini Donut" data-price="15" data-stock="5"><span>🍩</span>Mini Donut<br><b>NT$15</b><div class="stock">Stock: 5</div></div>
+  <div class="item" data-name="Coca Cola" data-price="20" data-stock="8"><span>🥤</span>Coca Cola<br><b>NT$20</b><div class="stock">Stock: 8</div></div>
+  <div class="item" data-name="Water" data-price="10" data-stock="9"><span>💧</span>Water<br><b>NT$10</b><div class="stock">Stock: 9</div></div>
+  <div class="item" data-name="Coffee" data-price="25" data-stock="7"><span>☕</span>Coffee<br><b>NT$25</b><div class="stock">Stock: 7</div></div>
+  <div class="item" data-name="Pie Marshmallow" data-price="15" data-stock="4"><span>🎂</span>Pie Marshmallow<br><b>NT$15</b><div class="stock">Stock: 4</div></div>
+  <div class="item" data-name="Cake Roll" data-price="15" data-stock="6"><span>🥖</span>Cake Roll<br><b>NT$15</b><div class="stock">Stock: 6</div></div>
+  <div class="item" data-name="Mini Donut" data-price="15" data-stock="5"><span>🍩</span>Mini Donut<br><b>NT$15</b><div class="stock">Stock: 5</div></div>
   </div>
 
   <div class="coin-slot" id="coinSlot">💰 Insert</div>
@@ -281,6 +292,7 @@
   </div>
 
   <div class="output" id="output"></div>
+  <div class="signature">安姬</div>
 </div>
 
 <script>
@@ -348,6 +360,7 @@ items.forEach(item => {
     if(balance >= price){
       balance -= price;
       stock -= 1;
+      stock = Math.max(0, stock); // clamp non-negative
       item.setAttribute('data-stock', stock);
       // update visible stock label and soldout state
       const stockEl = item.querySelector('.stock');
@@ -375,8 +388,9 @@ document.getElementById("doneButton").addEventListener("click", function() {
     const changeAmount = balance;
     document.getElementById('output').textContent = `Transaction complete. Returning NT$${balance}`;
 
-    // coins fall animation
-    for(let i=0; i<Math.min(balance,10); i++){
+    // clear previous change and add falling coins (DOM append, avoid innerHTML +=)
+    changeBox.innerHTML = '';
+    for(let i=0; i<Math.min(changeAmount,10); i++){
       const coin = document.createElement("div");
       coin.classList.add("falling-coin");
       coin.textContent = "🪙";
@@ -385,7 +399,11 @@ document.getElementById("doneButton").addEventListener("click", function() {
       changeBox.appendChild(coin);
     }
 
-    changeBox.innerHTML += `<p style="font-size:12px;margin-top:5px;">Returned NT$${changeAmount}</p>`;
+    const p = document.createElement('p');
+    p.style.fontSize = '12px';
+    p.style.marginTop = '5px';
+    p.textContent = `Returned NT$${changeAmount}`;
+    changeBox.appendChild(p);
     balance = 0;
     updateScreen();
 
